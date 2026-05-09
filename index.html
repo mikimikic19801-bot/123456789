@@ -133,7 +133,7 @@
                     📉 Automatski presek padova kvota (13:00 / 17:00)
                 </h3>
                 <div id="oddsDropContainer" class="text-sm text-gray-500 italic py-6">
-                    Nema registrovanih padova kvota iznad 10% u poslednjem preseku.
+                    Učitavanje podataka za presek...
                 </div>
             </div>
         </div>
@@ -151,7 +151,6 @@
     let odsviraniAlarmi = new Set();
     let serviceWorkerReg = null;
 
-    // Traženje dozvole za notifikacije na klik zvonca
     async function requestNotificationPermission() {
         if (!('Notification' in window)) {
             alert("Ovaj telefon ne podržava sistemska obaveštenja.");
@@ -161,18 +160,15 @@
         const permission = await Notification.requestPermission();
         if (permission === 'granted') {
             document.getElementById('bellDot').classList.add('hidden');
-            // Kratka test notifikacija
             sendPushNotification("Sistemska obaveštenja", "Alarmi za promenu kvota su uspešno aktivirani! 🔔");
         } else {
-            alert("Moraš odobriti notifikacije u pretraživaču da bi dobijao alarme.");
+            alert("Moraš odobriti notifikacije u pretraživaču da bi dobijao alarme na telefon.");
         }
     }
 
-    // Funkcija za slanje sistemskog push obaveštenja na telefon
     function sendPushNotification(title, message) {
         if (Notification.permission === 'granted') {
             if (serviceWorkerReg) {
-                // Slanje kroz Service Worker (jedini ispravan način na mobilnim uređajima)
                 serviceWorkerReg.showNotification(title, {
                     body: message,
                     icon: 'icon-192.png',
@@ -185,7 +181,6 @@
         }
     }
 
-    // Audio generator
     function playAlertSound() {
         try {
             const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
@@ -201,7 +196,7 @@
             oscillator.start();
             oscillator.stop(audioCtx.currentTime + 0.4);
         } catch (e) {
-            console.log("Audio blokiran.");
+            console.log("Audio blokiran do prve interakcije.");
         }
     }
 
@@ -313,32 +308,37 @@
             let statusAlarma = "Pratimo situaciju...";
             let alarmAktivan = false;
 
-            // LOGIKA: Detekcija bilo kog favorita na meču (kvota < 2.30)
+            // Logika: Detekcija bilo kog favorita na meču (kvota < 2.30)
             if (initialHomeOdd && initialAwayOdd) {
                 const d_favorit = initialHomeOdd < initialAwayOdd && initialHomeOdd < 2.30;
                 const g_favorit = initialAwayOdd < initialHomeOdd && initialAwayOdd < 2.30;
 
-                // 1. Ako domaći favorit gubi
+                // Definisanje početne kvote pre alarma
+                const kvotaIspis = `[Početna kvota na favorita pre meča: ${d_favorit ? initialHomeOdd : initialAwayOdd}]`;
+
                 if (d_favorit && awayScore > homeScore && elapsed < 75) {
                     statusAlarma = `🔥 ALARM: Domaći favorit gubi! Početna kvota na njega: ${initialHomeOdd}`;
                     alarmAktivan = true;
                 }
-                // 2. Ako gostujući favorit gubi
                 else if (g_favorit && homeScore > awayScore && elapsed < 75) {
                     statusAlarma = `🔥 ALARM: Gostujući favorit gubi! Početna kvota na njega: ${initialAwayOdd}`;
                     alarmAktivan = true;
                 }
-                // 3. Finiš drama (nerešeno u 75. minutu gde postoji favorit < 2.30)
                 else if (elapsed >= 75 && elapsed <= 85 && homeScore === awayScore && (initialHomeOdd < 2.30 || initialAwayOdd < 2.30)) {
-                    statusAlarma = `⏰ ALARM: Nerešeno ${homeScore}:${awayScore} u ${elapsed}. minutu! Favorit juri gol.`;
+                    statusAlarma = `⏰ ALARM: Nerešeno ${homeScore}:${awayScore} u ${elapsed}. minutu! Favorit juri pobedu.`;
                     alarmAktivan = true;
+                } else {
+                    // Kada nema alarma, a postoji favorit < 2.30, ispiši kvotu standardno
+                    statusAlarma = `Pratimo situaciju... Početna kvota na ${d_favorit ? 'domaćeg' : 'gostujućeg'} favorita: ${d_favorit ? initialHomeOdd : initialAwayOdd}`;
                 }
+            } else {
+                // Kada nema nikakvih kvota (vanredno), ili nema jasnog favorita < 2.30
+                statusAlarma = "Pratimo situaciju na terenu... (Bez jasnog favorita pre meča)";
             }
 
-            // Ako se aktivira nov alarm koji nismo do sada oglasili
             if (alarmAktivan && !odsviraniAlarmi.has(matchId)) {
                 playAlertSound();
-                sendPushNotification("⚠️ ALARM NA RADARU!", `${home} ${homeScore}:${awayScore} ${away} (${elapsed}') - Detektovana promena kod favorita!`);
+                sendPushNotification("⚠️ ALARM NA RADARU!", `${home} ${homeScore}:${awayScore} ${away} (${elapsed}') - Promena kod favorita!`);
                 odsviraniAlarmi.add(matchId);
             }
 
@@ -366,23 +366,54 @@
         });
     }
 
+    // AUTOMATSKI PAMETNI PRESEK KVOTA (Čuvanje i upoređivanje)
     function proveriVremeIPresek() {
         const sada = new Date();
         const sati = sada.getHours();
-        const minuti = sada.getMinutes();
 
-        if ((sati === 13 || sati === 17) && minuti < 4) {
-            localStorage.setItem(`presek_kvota_${sati}`, JSON.stringify(cachedOdds));
-            generisiPresekPadova(sati);
+        if (premečKvoteUčitane && Object.keys(cachedOdds).length > 0) {
+            
+            // Logika upisa za presek 13h (ako si na mreži od 13:00 do 16:59, upisaće prve dobijene kvote)
+            if (sati >= 13 && sati < 17) {
+                if (!localStorage.getItem('presek_kvota_13')) {
+                    localStorage.setItem('presek_kvota_13', JSON.stringify(cachedOdds));
+                    console.log("Presek za 13:00 uspešno registrovan!");
+                }
+            }
+            
+            // Logika upisa za presek 17h (od 17:00 pa nadalje upisuje presek i odmah radi kalkulaciju padova)
+            if (sati >= 17) {
+                if (!localStorage.getItem('presek_kvota_17')) {
+                    localStorage.setItem('presek_kvota_17', JSON.stringify(cachedOdds));
+                    console.log("Presek za 17:00 uspešno registrovan!");
+                    generisiPresekPadova(17);
+                }
+            }
+        }
+        
+        // Prikazuje trenutni status preseka na ekranu podrazumevano
+        azurirajStatusPresekaNaEkranu();
+    }
+
+    function azurirajStatusPresekaNaEkranu() {
+        const staraKolekcijaRaw = localStorage.getItem('presek_kvota_13');
+        const novaKolekcijaRaw = localStorage.getItem('presek_kvota_17');
+        const dropContainer = document.getElementById('oddsDropContainer');
+
+        if (staraKolekcijaRaw && novaKolekcijaRaw) {
+            generisiPresekPadova(17);
+        } else {
+            if (!staraKolekcijaRaw) {
+                dropContainer.innerHTML = "<div class='text-center py-4 text-gray-500'>Čeka se prvi presek kvota (od 13:00h) za poređenje padova.</div>";
+            } else if (!novaKolekcijaRaw) {
+                dropContainer.innerHTML = "<div class='text-center py-4 text-emerald-400 font-bold'>Presek za 13:00h uspešno zabeležen! Čeka se presek od 17:00h za analizu padova.</div>";
+            }
         }
     }
 
     function generisiPresekPadova(trenutniSat) {
-        const prosliPresekSat = trenutniSat === 17 ? 13 : null;
-        if (!prosliPresekSat) return;
-
-        const staraKolekcijaRaw = localStorage.getItem(`presek_kvota_${prosliPresekSat}`);
-        const novaKolekcijaRaw = localStorage.getItem(`presek_kvota_${trenutniSat}`);
+        const staraKolekcijaRaw = localStorage.getItem('presek_kvota_13');
+        const novaKolekcijaRaw = localStorage.getItem('presek_kvota_17');
 
         if (staraKolekcijaRaw && novaKolekcijaRaw) {
             const stareKvote = JSON.parse(staraKolekcijaRaw);
@@ -411,7 +442,6 @@
                             `;
                             dropContainer.appendChild(item);
                             
-                            // Šaljemo obaveštenje i za veliki pad u presecima
                             sendPushNotification("📉 VELIKI PAD KVOTE!", `Utakmica ${timovi} beleži pad od ${procenatPada.toFixed(1)}%!`);
                         }
                     }
@@ -419,7 +449,7 @@
             }
 
             if (!pronadjenPad) {
-                dropContainer.innerHTML = "Nema registrovanih padova kvota iznad 10% u poslednjem preseku.";
+                dropContainer.innerHTML = "<div class='text-center py-4 text-gray-500'>Nema registrovanih padova kvota iznad 10% u poslednjem preseku.</div>";
             }
         }
     }
@@ -428,15 +458,18 @@
         runScanner();
     }
 
-    // REGISTRACIJA SERVICE WORKER-A (Povezano i za rad sa sistemskim notifikacijama)
+    document.getElementById('bellBtn').addEventListener('click', () => {
+        document.getElementById('bellDot').classList.add('hidden');
+    });
+
+    // REGISTRACIJA SERVICE WORKER-A ZA PWA INSTALACIJU I NOTIFIKACIJE
     if ('serviceWorker' in navigator) {
         window.addEventListener('load', () => {
             navigator.serviceWorker.register('./sw.js')
                 .then(reg => {
-                    console.log('Service Worker uspešno pokrenut!');
-                    serviceWorkerReg = reg; // Čuvamo instancu registra za notifikacije
+                    console.log('Service Worker uspešno registrovan!');
+                    serviceWorkerReg = reg;
                     
-                    // Pokrećemo inicijalni upit za dozvolu
                     if (Notification.permission === 'default') {
                         document.getElementById('bellDot').classList.remove('hidden');
                     }
