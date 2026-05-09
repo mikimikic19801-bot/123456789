@@ -55,11 +55,11 @@
             </div>
         </div>
         <div class="flex items-center gap-3">
-            <button class="bg-gray-800 p-2.5 rounded-full relative hover:bg-gray-700">
-                🔔 <span class="absolute top-1 right-1 w-2.5 h-2.5 bg-emerald-500 rounded-full"></span>
+            <button id="bellBtn" onclick="requestNotificationPermission()" class="bg-gray-800 p-2.5 rounded-full relative hover:bg-gray-700 transition">
+                🔔 <span id="bellDot" class="absolute top-1 right-1 w-2.5 h-2.5 bg-red-500 rounded-full"></span>
             </button>
             <button onclick="manualScan()" class="bg-emerald-400 text-black font-extrabold px-4 py-2.5 rounded-xl flex items-center gap-2 hover:bg-emerald-500 transition text-sm">
-                Skreniraj ručno 🔄
+                Skeniraj ručno 🔄
             </button>
         </div>
     </header>
@@ -67,7 +67,6 @@
     <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
         
         <div class="lg:col-span-4 flex flex-col gap-6">
-            
             <div class="bg-gray-900 border border-gray-800 rounded-2xl p-5 shadow-lg">
                 <div class="flex justify-between items-center mb-4">
                     <h3 class="text-sm font-extrabold text-gray-300 uppercase tracking-wider">Status radara</h3>
@@ -98,8 +97,8 @@
                 
                 <div class="flex flex-col gap-3">
                     <div class="flex justify-between items-center bg-gray-950 p-3.5 rounded-xl border border-gray-800">
-                        <span class="text-xs font-bold text-gray-300">Favorit gubi na meču</span>
-                        <span class="bg-red-500/10 text-red-400 text-[10px] font-black px-2.5 py-1 rounded-lg border border-red-500/20">&lt; 1.75</span>
+                        <span class="text-xs font-bold text-gray-300">Bilo koji favorit gubi</span>
+                        <span class="bg-red-500/10 text-red-400 text-[10px] font-black px-2.5 py-1 rounded-lg border border-red-500/20">&lt; 2.30</span>
                     </div>
                     <div class="flex justify-between items-center bg-gray-950 p-3.5 rounded-xl border border-gray-800">
                         <span class="text-xs font-bold text-gray-300">Nerešeno u finišu</span>
@@ -114,7 +113,6 @@
         </div>
 
         <div class="lg:col-span-8 flex flex-col gap-6">
-            
             <div class="bg-gray-900 border border-gray-800 rounded-2xl p-5 shadow-lg">
                 <div class="flex justify-between items-center mb-4">
                     <h3 class="text-sm font-extrabold text-gray-300 uppercase tracking-wider flex items-center gap-2">
@@ -143,16 +141,51 @@
 </div>
 
 <script>
-    // TVOJI API KLJUČEVI (Potpuno povezani)
     const FOOTBALL_API_KEY = "f1cce1e4be71307c45a7a206e4a16495";
-    const THEODDS_API_KEY = "64b0f9f9b5c3e5a32b2e3f5b72e1904a"; // Tvoj važeći ključ za kvote
+    const THEODDS_API_KEY = "64b0f9f9b5c3e5a32b2e3f5b72e1904a";
 
-    let countdownSec = 180; // Osvežavanje na 3 minuta
+    let countdownSec = 180;
     let countdownInterval = null;
-    let cachedOdds = {}; // Keširane kvote pre meča kako ne bismo trošili API nepotrebno
+    let cachedOdds = {};
     let premečKvoteUčitane = false;
+    let odsviraniAlarmi = new Set();
+    let serviceWorkerReg = null;
 
-    // Funkcija za zvučni alarm
+    // Traženje dozvole za notifikacije na klik zvonca
+    async function requestNotificationPermission() {
+        if (!('Notification' in window)) {
+            alert("Ovaj telefon ne podržava sistemska obaveštenja.");
+            return;
+        }
+        
+        const permission = await Notification.requestPermission();
+        if (permission === 'granted') {
+            document.getElementById('bellDot').classList.add('hidden');
+            // Kratka test notifikacija
+            sendPushNotification("Sistemska obaveštenja", "Alarmi za promenu kvota su uspešno aktivirani! 🔔");
+        } else {
+            alert("Moraš odobriti notifikacije u pretraživaču da bi dobijao alarme.");
+        }
+    }
+
+    // Funkcija za slanje sistemskog push obaveštenja na telefon
+    function sendPushNotification(title, message) {
+        if (Notification.permission === 'granted') {
+            if (serviceWorkerReg) {
+                // Slanje kroz Service Worker (jedini ispravan način na mobilnim uređajima)
+                serviceWorkerReg.showNotification(title, {
+                    body: message,
+                    icon: 'icon-192.png',
+                    badge: 'icon-192.png',
+                    vibrate: [200, 100, 200]
+                });
+            } else {
+                new Notification(title, { body: message, icon: 'icon-192.png' });
+            }
+        }
+    }
+
+    // Audio generator
     function playAlertSound() {
         try {
             const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
@@ -168,11 +201,10 @@
             oscillator.start();
             oscillator.stop(audioCtx.currentTime + 0.4);
         } catch (e) {
-            console.log("Audio blokiran od strane pretraživača do prve interakcije.");
+            console.log("Audio blokiran.");
         }
     }
 
-    // Tajmer za osvežavanje ekrana
     function startTimer() {
         if (countdownInterval) clearInterval(countdownInterval);
         countdownSec = 180;
@@ -189,7 +221,6 @@
         }, 1000);
     }
 
-    // 1. Povlačenje live rezultata sa API-Sports
     async function fetchLiveResults() {
         try {
             const res = await fetch('https://v3.football.api-sports.io/fixtures?live=all', {
@@ -207,14 +238,11 @@
         }
     }
 
-    // 2. Povlačenje kvota sa TheOdds API (Samo kada je triger aktiviran)
     async function fetchTheOdds() {
         try {
             const res = await fetch(`https://api.the-odds-api.com/v4/sports/soccer/odds/?apiKey=${THEODDS_API_KEY}&regions=eu&markets=h2h`);
             const data = await res.json();
-            console.log("Kvote za sve dostupne lige učitane!");
             
-            // Mapiranje kvota u keš memoriju radi brzog poređenja
             data.forEach(match => {
                 const key = `${match.home_team.toLowerCase()}_vs_${match.away_team.toLowerCase()}`;
                 const bookmaker = match.bookmakers[0];
@@ -238,14 +266,12 @@
         }
     }
 
-    // Glavni pokretač skenera
     async function runScanner() {
         document.getElementById('radarMatchesContainer').innerHTML = `
             <div class="text-center py-10 text-emerald-400 font-bold">
                 Učitavanje live prenosa i satelitskih kvota...
             </div>`;
 
-        // Ako nemamo keširane kvote, povuci ih odmah na početku rada aplikacije
         if (!premečKvoteUčitane) {
             await fetchTheOdds();
         }
@@ -265,7 +291,6 @@
         proveriVremeIPresek();
     }
 
-    // Obrada podataka i paljenje alarma
     function processAndRender(fixtures) {
         const container = document.getElementById('radarMatchesContainer');
         container.innerHTML = '';
@@ -277,38 +302,53 @@
             const awayScore = match.goals.away ?? 0;
             const elapsed = match.fixture.status.elapsed;
             const league = match.league.name;
+            const matchId = match.fixture.id;
             
-            // Spajanje utakmice sa keširanim kvotama
             const key = `${home.toLowerCase()}_vs_${away.toLowerCase()}`;
             const oddsData = cachedOdds[key];
+            
             const initialHomeOdd = oddsData ? oddsData.homeOdd : null;
+            const initialAwayOdd = oddsData ? oddsData.awayOdd : null;
 
             let statusAlarma = "Pratimo situaciju...";
             let alarmAktivan = false;
 
-            // TRIGER LOGIKA 1: Favorit (početna kvota < 1.75) gubi na meču
-            if (initialHomeOdd && initialHomeOdd < 1.75 && awayScore > homeScore && elapsed < 75) {
-                statusAlarma = `🔥 ALARM: Favorit gubi na domaćem terenu! Početna kvota: ${initialHomeOdd}`;
-                alarmAktivan = true;
-            }
-            // TRIGER LOGIKA 2: Nerešeno u finišu (0:0 u 75. minutu), a favorit je bio jak pre meča
-            else if (elapsed >= 75 && elapsed <= 85 && homeScore === 0 && awayScore === 0 && initialHomeOdd && initialHomeOdd < 1.75) {
-                statusAlarma = `⏰ ALARM: Nerešeno 0:0 u ${elapsed}. minutu! Favorit pritiska za gol.`;
-                alarmAktivan = true;
+            // LOGIKA: Detekcija bilo kog favorita na meču (kvota < 2.30)
+            if (initialHomeOdd && initialAwayOdd) {
+                const d_favorit = initialHomeOdd < initialAwayOdd && initialHomeOdd < 2.30;
+                const g_favorit = initialAwayOdd < initialHomeOdd && initialAwayOdd < 2.30;
+
+                // 1. Ako domaći favorit gubi
+                if (d_favorit && awayScore > homeScore && elapsed < 75) {
+                    statusAlarma = `🔥 ALARM: Domaći favorit gubi! Početna kvota na njega: ${initialHomeOdd}`;
+                    alarmAktivan = true;
+                }
+                // 2. Ako gostujući favorit gubi
+                else if (g_favorit && homeScore > awayScore && elapsed < 75) {
+                    statusAlarma = `🔥 ALARM: Gostujući favorit gubi! Početna kvota na njega: ${initialAwayOdd}`;
+                    alarmAktivan = true;
+                }
+                // 3. Finiš drama (nerešeno u 75. minutu gde postoji favorit < 2.30)
+                else if (elapsed >= 75 && elapsed <= 85 && homeScore === awayScore && (initialHomeOdd < 2.30 || initialAwayOdd < 2.30)) {
+                    statusAlarma = `⏰ ALARM: Nerešeno ${homeScore}:${awayScore} u ${elapsed}. minutu! Favorit juri gol.`;
+                    alarmAktivan = true;
+                }
             }
 
-            if (alarmAktivan) {
+            // Ako se aktivira nov alarm koji nismo do sada oglasili
+            if (alarmAktivan && !odsviraniAlarmi.has(matchId)) {
                 playAlertSound();
+                sendPushNotification("⚠️ ALARM NA RADARU!", `${home} ${homeScore}:${awayScore} ${away} (${elapsed}') - Detektovana promena kod favorita!`);
+                odsviraniAlarmi.add(matchId);
             }
 
-            // Kreiranje kartice utakmice
             const card = document.createElement('div');
-            card.className = `bg-gray-950 border ${alarmAktivan ? 'border-red-500/40' : 'border-gray-800'} p-4 rounded-xl flex flex-col gap-3 transition-all`;
+            card.className = `bg-gray-950 border ${alarmAktivan ? 'border-red-500/40 animate-pulse' : 'border-gray-800'} p-4 rounded-xl flex flex-col gap-3 transition-all`;
             card.innerHTML = `
                 <div class="flex justify-between items-center text-xs text-gray-500 font-bold border-b border-gray-900 pb-2">
                     <span>🏆 ${league}</span>
                     <span class="flex items-center gap-1.5 text-emerald-400">
-                        <span class="w-2 h-2 bg-emerald-500 rounded-full ${alarmAktivan ? 'animate-ping' : 'animate-pulse'}"></span> ${elapsed}' min
+                        <span class="w-2 h-2 bg-emerald-500 rounded-full animate-ping"></span> ${elapsed}' min
                     </span>
                 </div>
                 <div class="flex justify-between items-center py-2">
@@ -326,13 +366,11 @@
         });
     }
 
-    // AUTOMATSKI PRESEK PADOVA U 13:00 i 17:00 h
     function proveriVremeIPresek() {
         const sada = new Date();
         const sati = sada.getHours();
         const minuti = sada.getMinutes();
 
-        // Čuvamo stanje u 13:00 i 17:00 (prozor prva 4 minuta)
         if ((sati === 13 || sati === 17) && minuti < 4) {
             localStorage.setItem(`presek_kvota_${sati}`, JSON.stringify(cachedOdds));
             generisiPresekPadova(sati);
@@ -372,6 +410,9 @@
                                 <span>Pad: -${procenatPada.toFixed(1)}% (${staraKvota.toFixed(2)} -> ${novaKvota.toFixed(2)})</span>
                             `;
                             dropContainer.appendChild(item);
+                            
+                            // Šaljemo obaveštenje i za veliki pad u presecima
+                            sendPushNotification("📉 VELIKI PAD KVOTE!", `Utakmica ${timovi} beleži pad od ${procenatPada.toFixed(1)}%!`);
                         }
                     }
                 }
@@ -387,7 +428,23 @@
         runScanner();
     }
 
-    // Inicijalno pokretanje prilikom otvaranja aplikacije
+    // REGISTRACIJA SERVICE WORKER-A (Povezano i za rad sa sistemskim notifikacijama)
+    if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+            navigator.serviceWorker.register('./sw.js')
+                .then(reg => {
+                    console.log('Service Worker uspešno pokrenut!');
+                    serviceWorkerReg = reg; // Čuvamo instancu registra za notifikacije
+                    
+                    // Pokrećemo inicijalni upit za dozvolu
+                    if (Notification.permission === 'default') {
+                        document.getElementById('bellDot').classList.remove('hidden');
+                    }
+                })
+                .catch(err => console.error('Greška sa Service Worker-om:', err));
+        });
+    }
+
     startTimer();
     runScanner();
 </script>
