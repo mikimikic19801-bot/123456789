@@ -37,11 +37,11 @@
     <div class="max-w-6xl mx-auto flex justify-between items-center">
       <div class="flex items-center gap-3">
         <div class="w-10 h-10 bg-gradient-to-tr from-emerald-500 to-teal-400 rounded-xl flex items-center justify-center shadow-lg shadow-emerald-500/20 radar-pulse">
-          <i data-lucide="activity" class="text-slate-900 w-6 h-6 stroke-[2.5]"></i>
+          <i data-lucide="radar" class="text-slate-900 w-6 h-6 stroke-[2.5]"></i>
         </div>
         <div>
           <h1 class="text-xl font-extrabold tracking-tight bg-gradient-to-r from-emerald-400 to-teal-300 bg-clip-text text-transparent">Fudbal Radar</h1>
-          <p class="text-xs text-slate-400 font-medium">Skeniranje kvota i live rezultata</p>
+          <p class="text-xs text-slate-400 font-medium">Live praćenje i pametna detekcija promena</p>
         </div>
       </div>
       
@@ -51,7 +51,7 @@
           <span class="absolute top-1 right-1 w-2.5 h-2.5 bg-emerald-500 rounded-full hidden" id="bellDot"></span>
         </button>
         <button id="manualRefresh" class="flex items-center gap-2 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-slate-950 font-bold px-4 py-2.5 rounded-xl shadow-lg shadow-emerald-500/10 transition-all text-sm">
-          <i data-lucide="refresh-cw" class="w-4 h-4" id="refreshIcon"></i> Skreniraj ručno
+          <i data-lucide="refresh-cw" class="w-4 h-4" id="refreshIcon"></i> Skeniraj ručno
         </button>
       </div>
     </div>
@@ -62,7 +62,7 @@
     <div class="space-y-6">
       <div class="glass rounded-2xl p-5 space-y-4">
         <div class="flex justify-between items-center">
-          <h2 class="text-md font-bold text-slate-300 uppercase tracking-wider">Status skenera</h2>
+          <h2 class="text-md font-bold text-slate-300 uppercase tracking-wider">Status Radara</h2>
           <span class="flex h-3 w-3 relative">
             <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
             <span class="relative inline-flex rounded-full h-3 w-3 bg-emerald-500"></span>
@@ -76,19 +76,19 @@
           </div>
           <div class="bg-slate-900/50 p-3 rounded-xl border border-slate-800/60">
             <p class="text-xs text-slate-400 mb-1">Kvote API</p>
-            <p class="text-xs font-semibold text-teal-400 truncate">TheOdds aktivan</p>
+            <p class="text-xs font-semibold text-teal-400 truncate">TheOdds (Sve lige)</p>
           </div>
         </div>
 
         <div class="text-xs text-slate-400 flex justify-between items-center border-t border-slate-800/60 pt-3">
-          <span>Sledeće skeniranje:</span>
+          <span>Automatsko osvežavanje:</span>
           <span id="nextRefreshTime" class="font-bold text-slate-200">Preostalo ~4m</span>
         </div>
       </div>
 
       <div class="glass rounded-2xl p-5 space-y-4">
         <h2 class="text-md font-bold text-slate-300 flex items-center gap-2">
-          <i data-lucide="bell-ring" class="w-4 h-4 text-emerald-400"></i> Zone alarma
+          <i data-lucide="bell-ring" class="w-4 h-4 text-emerald-400"></i> Aktivni Alarmi
         </h2>
         <div class="space-y-3">
           <div class="flex items-center justify-between p-3 bg-slate-900/30 rounded-xl border border-slate-800/40">
@@ -97,10 +97,10 @@
           </div>
           <div class="flex items-center justify-between p-3 bg-slate-900/30 rounded-xl border border-slate-800/40">
             <span class="text-sm">Nerešeno u finišu</span>
-            <span class="text-xs px-2.5 py-1 rounded-full bg-amber-500/15 text-amber-400 font-semibold border border-amber-500/20">75' minut</span>
+            <span class="text-xs px-2.5 py-1 rounded-full bg-amber-500/15 text-amber-400 font-semibold border border-amber-500/20">75' min</span>
           </div>
           <div class="flex items-center justify-between p-3 bg-slate-900/30 rounded-xl border border-slate-800/40">
-            <span class="text-sm">Pad kvote u presecima</span>
+            <span class="text-sm">Pad u presecima</span>
             <span class="text-xs px-2.5 py-1 rounded-full bg-teal-500/15 text-teal-400 font-semibold border border-teal-500/20">> 10% (13h/17h)</span>
           </div>
         </div>
@@ -112,22 +112,22 @@
       <div class="space-y-4">
         <div class="flex justify-between items-center">
           <h2 class="text-lg font-bold flex items-center gap-2 text-slate-200">
-            <i data-lucide="radar" class="w-5 h-5 text-emerald-400 animate-pulse"></i> Utakmice na radaru
+            <i data-lucide="play-circle" class="w-5 h-5 text-emerald-400"></i> Sve utakmice uživo
           </h2>
-          <span class="text-xs bg-slate-800 px-3 py-1.5 rounded-lg border border-slate-700/50" id="totalMatchesCount">Skenirano: 0</span>
+          <span class="text-xs bg-slate-800 px-3 py-1.5 rounded-lg border border-slate-700/50" id="totalMatchesCount">Uživo: 0</span>
         </div>
 
         <div id="matchesContainer" class="space-y-4">
           <div class="glass rounded-2xl p-8 text-center text-slate-500">
-            <i data-lucide="loader animate-spin" class="w-8 h-8 mx-auto mb-3 text-slate-400"></i>
-            <p class="text-sm font-medium">Učitavanje podataka sa radara...</p>
+            <i data-lucide="loader" class="w-8 h-8 animate-spin mx-auto mb-3 text-slate-400"></i>
+            <p class="text-sm font-medium">Učitavanje utakmica sa radara...</p>
           </div>
         </div>
       </div>
 
       <div class="glass rounded-2xl p-5 space-y-4">
         <h2 class="text-md font-bold text-slate-300 flex items-center gap-2">
-          <i data-lucide="trending-down" class="w-4 h-4 text-emerald-400"></i> Automatski presek padova (13:00 / 17:00)
+          <i data-lucide="trending-down" class="w-4 h-4 text-emerald-400"></i> Automatski presek padova kvota (13:00 / 17:00)
         </h2>
         <div id="oddsDropContainer" class="text-sm text-slate-400 space-y-2">
           <p class="italic text-slate-500">Nema registrovanih padova kvota iznad 10% u poslednjem preseku.</p>
@@ -138,7 +138,7 @@
   </main>
 
   <script>
-    // Rotacija ključeva za API-Football (200 besplatnih dnevnih zahteva po ključu)
+    // Rotacija ključeva za API-Football
     const API_FOOTBALL_KEYS = ['8464fe0b2c02cc648155fd7aaa8a5806', 'f1cce1e4be71307c45a7a206e4a16495'];
     let currentApiKeyIndex = 0;
     
@@ -155,7 +155,7 @@
       requestNotificationPermission();
       initApp();
       
-      // Osvežavanje na svaka 3.5 minuta
+      // Osvežavanje na svaka 3.5 minuta (210000ms)
       setInterval(fetchLiveScores, 210000);
       setInterval(updateCountDown, 1000);
       setInterval(checkTimeForOddsReport, 30000);
@@ -171,26 +171,26 @@
       console.log("Sistem je prešao na API ključ broj: " + (currentApiKeyIndex + 1));
     }
 
-    // Audio sintisajzer za zvučne signale i uzbune
+    // Audio generator pomoću Web Audio API (Sviranje tona bez spoljnih fajlova)
     function playBeep(type) {
       try {
         const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
         
         if (type === 'danger') {
-          // Alarm kada favorit krene da gubi (Oštar, silazni dvotonski zvuk)
+          // Alarm za gubljenje favorita (Oštar, silazni dvotonski zvuk)
           playTone(audioCtx, 600, 0.2, 'sawtooth');
           setTimeout(() => playTone(audioCtx, 480, 0.3, 'sawtooth'), 180);
         } else if (type === 'warn') {
-          // Alarm za 75. minut i nerešeno (Pulsirajući ton)
+          // Nerešeno u 75. minutu
           playTone(audioCtx, 550, 0.15, 'triangle');
           setTimeout(() => playTone(audioCtx, 550, 0.15, 'triangle'), 200);
         } else {
-          // Standardni presek kvota i informacije
+          // Standardno obaveštenje / Presek kvota
           playTone(audioCtx, 800, 0.1, 'sine');
           setTimeout(() => playTone(audioCtx, 1000, 0.15, 'sine'), 100);
         }
       } catch (e) {
-        console.error("Audio sistem nije aktiviran: ", e);
+        console.error("Audio sistem blokiran ili nedostupan: ", e);
       }
     }
 
@@ -243,9 +243,10 @@
       await fetchLiveScores();
     }
 
+    // Povlačenje kvota za sve globalno dostupne fudbalske lige
     async function fetchInitialOdds() {
       try {
-        const response = await fetch(`https://api.the-odds-api.com/v4/sports/soccer_uefa_champs_league/odds/?apiKey=${ODDS_API_KEY}&regions=eu&markets=h2h`);
+        const response = await fetch(`https://api.the-odds-api.com/v4/sports/soccer/odds/?apiKey=${ODDS_API_KEY}&regions=eu&markets=h2h`);
         if (!response.ok) throw new Error("Problem sa Odds API-jem");
         const data = await response.json();
         
@@ -266,6 +267,7 @@
           }
         });
         localStorage.setItem('fudbalRadarOdds', JSON.stringify(initialOddsData));
+        console.log("Kvote za sve dostupne lige učitane!");
       } catch (e) {
         console.error("Učitavanje sačuvanih kvota sa memorije...");
         initialOddsData = JSON.parse(localStorage.getItem('fudbalRadarOdds')) || {};
@@ -312,7 +314,7 @@
           <div class="glass rounded-2xl p-8 text-center text-slate-500">
             <p class="text-sm font-medium">Trenutno nema utakmica uživo na radaru.</p>
           </div>`;
-        document.getElementById('totalMatchesCount').innerText = "Skenirano: 0";
+        document.getElementById('totalMatchesCount').innerText = "Uživo: 0";
         return;
       }
 
@@ -325,12 +327,13 @@
         const elapsed = item.fixture.status.elapsed;
         
         const matchKey = findMatchKey(home, away);
-        const initOdds = initialOddsData[matchKey] || { home: 1.45, away: 5.00 }; // Primer fallback vrednosti
-
-        const isHomeFav = initOdds.home < 1.75;
-        const isAwayFav = initOdds.away < 1.75;
         
-        if (!isHomeFav && !isAwayFav) return; // Radarišu se isključivo utakmice sa izrazitim favoritom
+        // Uzimamo kvote iz baze. Ako meč nije u TheOdds listi, dodeljujemo neutralne kvote
+        const initOdds = initialOddsData[matchKey] || null;
+
+        const isHomeFav = initOdds && initOdds.home < 1.75;
+        const isAwayFav = initOdds && initOdds.away < 1.75;
+        const hasFav = isHomeFav || isAwayFav;
 
         count++;
 
@@ -340,25 +343,28 @@
 
         const prevState = matchesData[fixtureId] || {};
 
-        // ALARM 1: Favorit gubi u bilo kom delu meča
-        if (isHomeFav && goalsAway > goalsHome && prevState.lastAwayGoals !== goalsAway) {
-          alarmTriggered = true;
-          alarmType = 'danger';
-          alarmText = `Favorit ${home} gubi! Trenutni rezultat: ${goalsHome}-${goalsAway}`;
-        } else if (isAwayFav && goalsHome > goalsAway && prevState.lastHomeGoals !== goalsHome) {
-          alarmTriggered = true;
-          alarmType = 'danger';
-          alarmText = `Favorit ${away} gubi! Trenutni rezultat: ${goalsHome}-${goalsAway}`;
+        // ALARM 1: Ako na meču postoji favorit i krene da gubi u bilo kom momentu
+        if (hasFav) {
+          if (isHomeFav && goalsAway > goalsHome && prevState.lastAwayGoals !== goalsAway) {
+            alarmTriggered = true;
+            alarmType = 'danger';
+            alarmText = `Favorit ${home} gubi kod kuće! Trenutno: ${goalsHome}-${goalsAway}`;
+          } else if (isAwayFav && goalsHome > goalsAway && prevState.lastHomeGoals !== goalsHome) {
+            alarmTriggered = true;
+            alarmType = 'danger';
+            alarmText = `Favorit ${away} gubi na strani! Trenutno: ${goalsHome}-${goalsAway}`;
+          }
+
+          // ALARM 2: Nerešeno u 75. minutu na utakmici gde postoji favorit
+          if (elapsed === 75 && goalsHome === goalsAway && prevState.checked75 !== true) {
+            alarmTriggered = true;
+            alarmType = 'warn';
+            alarmText = `Nerešeno u 75' minutu na meču ${home} - ${away} (${goalsHome}-${goalsAway})`;
+            matchesData[fixtureId] = { ...prevState, checked75: true };
+          }
         }
 
-        // ALARM 2: Nerešeno u 75. minutu
-        if (elapsed === 75 && goalsHome === goalsAway && prevState.checked75 !== true) {
-          alarmTriggered = true;
-          alarmType = 'warn';
-          alarmText = `Nerešeno u 75' minutu na meču ${home} - ${away} (${goalsHome}-${goalsAway})`;
-          matchesData[fixtureId] = { ...prevState, checked75: true };
-        }
-
+        // Sačuvaj trenutno stanje golova radi sprečavanja višestrukog okidanja zvuka za isti gol
         matchesData[fixtureId] = {
           ...matchesData[fixtureId],
           lastHomeGoals: goalsHome,
@@ -367,12 +373,18 @@
 
         if (alarmTriggered) {
           playBeep(alarmType);
-          sendNotification("Fudbal Radar Alarm", alarmText);
+          sendNotification("Fudbal Radar Signal", alarmText);
           fetchLiveOddsForMatch(matchKey, fixtureId);
         }
 
         const liveOddsText = matchesData[fixtureId]?.liveOdds ? 
-          `<span class="text-xs font-bold px-2.5 py-1 rounded bg-rose-500/10 text-rose-400 border border-rose-500/20 ml-2">Uživo kvota: ${matchesData[fixtureId].liveOdds}</span>` : '';
+          `<span class="text-xs font-bold px-2.5 py-1 rounded bg-rose-500/10 text-rose-400 border border-rose-500/20 ml-2">Uživo: ${matchesData[fixtureId].liveOdds}</span>` : '';
+
+        // Određivanje prikaza početne kvote na kartici
+        let startOddsBadge = `<span class="text-xs bg-slate-900/60 text-slate-400 px-2 py-1 rounded">Nema kvote</span>`;
+        if (initOdds) {
+          startOddsBadge = `<span class="text-xs bg-slate-900/60 text-slate-400 px-2 py-1 rounded">Početna: ${isHomeFav ? initOdds.home + ' (H)' : initOdds.away + ' (A)'}</span>`;
+        }
 
         const card = document.createElement('div');
         card.className = "glass rounded-2xl p-5 border border-slate-800 hover:border-slate-700/80 transition-all";
@@ -382,7 +394,7 @@
               <span class="w-2 h-2 rounded-full bg-emerald-500 inline-block radar-pulse"></span> Uživo ${elapsed}' min
             </span>
             <div class="flex gap-2">
-              <span class="text-xs bg-slate-900/60 text-slate-400 px-2 py-1 rounded">Početna kvota: ${isHomeFav ? initOdds.home + ' (H)' : initOdds.away + ' (A)'}</span>
+              ${startOddsBadge}
               ${liveOddsText}
             </div>
           </div>
@@ -403,7 +415,7 @@
         container.appendChild(card);
       });
 
-      document.getElementById('totalMatchesCount').innerText = `Skenirano: ${count}`;
+      document.getElementById('totalMatchesCount').innerText = `Uživo: ${count}`;
       lucide.createIcons();
     }
 
@@ -415,7 +427,7 @@
 
     async function fetchLiveOddsForMatch(matchKey, fixtureId) {
       try {
-        const response = await fetch(`https://api.the-odds-api.com/v4/sports/soccer_uefa_champs_league/odds/?apiKey=${ODDS_API_KEY}&regions=eu&markets=h2h`);
+        const response = await fetch(`https://api.the-odds-api.com/v4/sports/soccer/odds/?apiKey=${ODDS_API_KEY}&regions=eu&markets=h2h`);
         if (!response.ok) return;
         const data = await response.json();
         
@@ -431,7 +443,7 @@
           }
         }
       } catch (e) {
-        console.error("Greška kod učitavanja kvota uživo: ", e);
+        console.error("Greška pri povlačenju uživo kvote: ", e);
       }
     }
 
@@ -496,7 +508,7 @@
         }
         lucide.createIcons();
       } catch (e) {
-        console.error("Greška prilikom analize pada kvota: ", e);
+        console.error("Greška pri generisanju izveštaja: ", e);
       }
     }
 
